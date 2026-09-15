@@ -6,14 +6,31 @@ O dataset são **~318 mil registros reais** de atrasos de voos comerciais nos EU
 
 ---
 
-## 🎯 O que este projeto demonstra
+## 📸 O projeto em funcionamento
 
-- Modelagem dimensional (**Star Schema**) e organização em camadas (**Medallion Architecture**: staging → intermediate → mart)
-- Transformações versionadas e testadas com **dbt** (`dbt-utils`, `dbt-expectations`, `dbt-date`)
-- Orquestração de pipeline com **Apache Airflow**, gerando tasks automaticamente a partir dos models dbt via **astronomer-cosmos**
-- Ambientes **dev/prod** configuráveis via variável do Airflow, sem alterar código
-- **CI/CD com GitHub Actions**: valida sintaxe, sobe um Postgres efêmero, roda `dbt build` (seed + run + test) e publica a documentação como artefato a cada push/PR
-- Ambiente 100% reprodutível com **Docker** e **UV**
+**Lineage graph (dbt docs)** — grafo de dependências entre staging, dimensões, fato e marts:
+![Lineage graph do dbt](assets/screenshots/dbt-lineage.png)
+
+**Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos, cada model dbt como uma task:
+![DAG do Airflow](assets/screenshots/airflow-dag.png)
+
+**CI/CD no GitHub Actions** — pipeline completo (seed + build + test) rodando a cada push:
+![CI passando](assets/screenshots/github-actions-ci.png)
+
+**Resultado em uma tabela analítica (mart)** — exemplo de dado pronto para consumo por BI:
+![Exemplo de mart](assets/screenshots/mart-sample.png)
+
+---
+
+## 🎯 Competências técnicas demonstradas
+
+- **Modelagem dimensional (Star Schema)** e organização em camadas (Medallion Architecture: staging → intermediate → mart)
+- **SQL e transformação de dados** com dbt, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL`
+- **Engenharia de qualidade de dados**: testes automatizados com `dbt-expectations` (integridade referencial, unicidade, valores aceitos)
+- **Orquestração de pipelines** com Apache Airflow — DAGs gerados automaticamente a partir dos models dbt via `astronomer-cosmos`, com agendamento diário
+- **Gestão de ambientes** (dev/prod) configuráveis por variável, sem alterar código — prática comum em times de dados
+- **CI/CD**: pipeline no GitHub Actions que valida sintaxe, sobe infraestrutura efêmera e roda o build completo antes de liberar merge
+- **Containerização** com Docker e gestão de dependências Python com UV
 
 ---
 
@@ -49,16 +66,6 @@ flowchart LR
 
 ---
 
-## 📂 Estrutura do repositório
-
-```
-├── 1_local_setup/       # Docker Compose (Postgres) + ambiente Python
-├── 2_data_warehouse/    # Projeto dbt: seeds, models (staging/intermediate/mart)
-├── 3_airflow/           # Projeto Astro/Airflow + DAG com Cosmos
-├── .github/workflows/   # Pipeline de CI (dbt_ci.yml)
-└── docs/SETUP.md        # Guia passo a passo completo de instalação e execução
-```
-
 ## 📊 Modelo de dados
 
 **Fato:** `fct_flight_delays` — cada linha representa uma combinação de mês + companhia aérea + aeroporto, com métricas de voos, atrasos, cancelamentos e minutos de atraso por causa (clima, companhia, sistema aéreo, segurança, aeronave atrasada).
@@ -69,35 +76,34 @@ flowchart LR
 
 ---
 
-## 🚀 Como rodar
+## 📂 Estrutura do repositório
 
-```bash
-# 1. Ambiente local (Postgres via Docker)
-cd 1_local_setup
-uv sync
-docker compose up -d
-
-# 2. Data Warehouse (dbt)
-cd ../2_data_warehouse/dw_bootcamp
-dbt deps --profiles-dir .
-dbt build --profiles-dir .
-
-# 3. Orquestração (Airflow)
-cd ../../3_airflow
-astro dev start
-# UI em http://localhost:8080
 ```
-
-📖 Guia completo com pré-requisitos, configuração de conexões e troubleshooting: **[docs/SETUP.md](docs/SETUP.md)**
+├── 1_local_setup/       # Docker Compose (Postgres) + ambiente Python
+├── 2_data_warehouse/    # Projeto dbt: seeds, models (staging/intermediate/mart)
+├── 3_airflow/           # Projeto Astro/Airflow + DAG com Cosmos
+├── .github/workflows/   # Pipeline de CI (dbt_ci.yml)
+└── docs/SETUP.md        # Guia detalhado de instalação e execução
+```
 
 ---
 
-## ✅ CI/CD
+## 🚀 Rodando localmente (resumo)
 
-A cada push ou pull request para `main`, o GitHub Actions:
-1. Valida a sintaxe de todos os models dbt (`dbt parse`)
-2. Sobe um PostgreSQL efêmero e executa o pipeline completo (`dbt seed` → `dbt build` → testes)
-3. Gera e publica a documentação do dbt (lineage graph) como artefato do workflow
+```bash
+git clone https://github.com/iannfava/DW_PROJECT.git && cd DW_PROJECT
+
+# Sobe o Postgres
+cd 1_local_setup && uv venv .venv && uv sync && docker compose up -d
+
+# Roda o pipeline dbt (após criar profiles.yml — veja o guia completo)
+cd ../2_data_warehouse/dw_bootcamp && dbt deps && dbt build
+
+# (Opcional) Orquestra com Airflow
+cd ../../3_airflow && astro dev start
+```
+
+📖 Passo a passo completo, com troubleshooting e configuração de conexões: **[docs/SETUP.md](docs/SETUP.md)**
 
 ---
 
