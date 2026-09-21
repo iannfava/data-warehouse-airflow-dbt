@@ -6,6 +6,27 @@ O dataset são **~318 mil registros reais** de atrasos de voos comerciais nos EU
 
 ---
 
+## 🏗️ Arquitetura
+
+```mermaid
+flowchart LR
+    A[Airline_Delay_Cause.csv] -->|dbt seed| B[(PostgreSQL)]
+    B --> C[Staging\nlimpeza e tipagem]
+    C --> D1[dim_airport]
+    C --> D2[dim_carrier]
+    C --> D3[dim_month]
+    C --> E[fct_flight_delays]
+    D1 & D2 & D3 --> E
+    E --> F1[mart_airport_performance]
+    E --> F2[mart_carrier_performance]
+    E --> F3[mart_monthly_kpis]
+    E --> F4[mart_delay_causes_long]
+    E --> F5[mart_delay_causes_share_month]
+    F1 & F2 & F3 & F4 & F5 --> G[Airflow + Cosmos\nagendamento diário]
+```
+
+---
+
 ## 📸 O projeto em funcionamento
 
 **Lineage graph (dbt docs)** — grafo de dependências entre staging, dimensões, fato e marts:
@@ -33,25 +54,6 @@ O dataset são **~318 mil registros reais** de atrasos de voos comerciais nos EU
 - **Containerização** com Docker e gestão de dependências Python com UV
 
 ---
-
-## 🏗️ Arquitetura
-
-```mermaid
-flowchart LR
-    A[Airline_Delay_Cause.csv] -->|dbt seed| B[(PostgreSQL)]
-    B --> C[Staging\nlimpeza e tipagem]
-    C --> D1[dim_airport]
-    C --> D2[dim_carrier]
-    C --> D3[dim_month]
-    C --> E[fct_flight_delays]
-    D1 & D2 & D3 --> E
-    E --> F1[mart_airport_performance]
-    E --> F2[mart_carrier_performance]
-    E --> F3[mart_monthly_kpis]
-    E --> F4[mart_delay_causes_long]
-    E --> F5[mart_delay_causes_share_month]
-    F1 & F2 & F3 & F4 & F5 --> G[Airflow + Cosmos\nagendamento diário]
-```
 
 ## 🧰 Stack
 
@@ -91,7 +93,7 @@ flowchart LR
 ## 🚀 Rodando localmente (resumo)
 
 ```bash
-git clone https://github.com/iannfava/DW_PROJECT.git && cd DW_PROJECT
+git clone https://github.com/iannfava/data-warehouse-airflow-dbt.git && cd data-warehouse-airflow-dbt
 
 # Sobe o Postgres
 cd 1_local_setup && uv venv .venv && uv sync && docker compose up -d
