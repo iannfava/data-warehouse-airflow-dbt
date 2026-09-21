@@ -30,16 +30,16 @@ flowchart LR
 ## 📸 O projeto em funcionamento
 
 **Lineage graph (dbt docs)** — grafo de dependências entre staging, dimensões, fato e marts:
-![Lineage graph do dbt](assets/screenshots/dbt-lineage.png)
+![Lineage graph do dbt](docs/imagens/dbt-lineage.png)
 
 **Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos, cada model dbt como uma task:
-![DAG do Airflow](assets/screenshots/airflow-dag.png)
+![DAG do Airflow](docs/imagens/airflow-dag.png)
 
 **CI/CD no GitHub Actions** — pipeline completo (seed + build + test) rodando a cada push:
-![CI passando](assets/screenshots/github-actions-ci.png)
+![CI passando](docs/imagens/github-actions-ci.png)
 
 **Resultado em uma tabela analítica (mart)** — exemplo de dado pronto para consumo por BI:
-![Exemplo de mart](assets/screenshots/mart-sample.png)
+![Exemplo de mart](docs/imagens/mart-sample.png)
 
 ---
 
