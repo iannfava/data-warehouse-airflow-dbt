@@ -35,7 +35,7 @@ flowchart LR
 **Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos, cada model dbt como uma task:
 ![DAG do Airflow](docs/imagens/airflow-dag.png)
 
-**CI/CD no GitHub Actions** — pipeline completo (seed + build + test) rodando a cada push:
+**CI/CD no GitHub Actions** — pipeline completo (seed + run + test) rodando a cada push:
 ![CI passando](docs/imagens/github-actions-ci.png)
 
 **Resultado em uma tabela analítica (mart)** — exemplo de dado pronto para consumo por BI:
