@@ -1,8 +1,12 @@
 # ✈️ DW Bootcamp — Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados completo, de ponta a ponta: ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada — construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Pipeline de dados end-to-end — ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada — construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
 
-O dataset são **~318 mil registros reais** de atrasos de voos comerciais nos EUA, transformados em um Data Warehouse analítico pronto para consumo por ferramentas de BI.
+---
+
+## 🎯 Problema
+
+Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente — reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
 
 ---
 
@@ -23,35 +27,10 @@ flowchart LR
     E --> F4[mart_delay_causes_long]
     E --> F5[mart_delay_causes_share_month]
     F1 & F2 & F3 & F4 & F5 --> G[Airflow + Cosmos\nagendamento diário]
+    H[GitHub Actions] -.valida cada push.-> B
 ```
 
----
-
-## 📸 O projeto em funcionamento
-
-**Lineage graph (dbt docs)** — grafo de dependências entre staging, dimensões, fato e marts:
-![Lineage graph do dbt](docs/imagens/dbt-lineage.png)
-
-**Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos, cada model dbt como uma task:
-![DAG do Airflow](docs/imagens/airflow-dag.png)
-
-**CI/CD no GitHub Actions** — pipeline completo (seed + run + test) rodando a cada push:
-![CI passando](docs/imagens/github-actions-ci.png)
-
-**Resultado em uma tabela analítica (mart)** — exemplo de dado pronto para consumo por BI:
-![Exemplo de mart](docs/imagens/mart-sample.png)
-
----
-
-## 🎯 Competências técnicas demonstradas
-
-- **Modelagem dimensional (Star Schema)** e organização em camadas (Medallion Architecture: staging → intermediate → mart)
-- **SQL e transformação de dados** com dbt, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL`
-- **Engenharia de qualidade de dados**: testes automatizados com `dbt-expectations` (integridade referencial, unicidade, valores aceitos)
-- **Orquestração de pipelines** com Apache Airflow — DAGs gerados automaticamente a partir dos models dbt via `astronomer-cosmos`, com agendamento diário
-- **Gestão de ambientes** (dev/prod) configuráveis por variável, sem alterar código — prática comum em times de dados
-- **CI/CD**: pipeline no GitHub Actions que valida sintaxe, sobe infraestrutura efêmera e roda o build completo antes de liberar merge
-- **Containerização** com Docker e gestão de dependências Python com UV
+**Medallion Architecture em 3 camadas:** Staging (limpeza e tipagem) → Intermediate (dimensões + fato, Star Schema) → Mart (tabelas analíticas prontas para BI). Orquestrado diariamente pelo Airflow via Cosmos, com CI/CD validando o pipeline inteiro a cada push.
 
 ---
 
@@ -68,13 +47,46 @@ flowchart LR
 
 ---
 
-## 📊 Modelo de dados
+## ⚙️ Implementação
 
-**Fato:** `fct_flight_delays` — cada linha representa uma combinação de mês + companhia aérea + aeroporto, com métricas de voos, atrasos, cancelamentos e minutos de atraso por causa (clima, companhia, sistema aéreo, segurança, aeronave atrasada).
+**O que foi construído:**
 
-**Dimensões:** `dim_airport`, `dim_carrier`, `dim_month`.
+- **Modelagem dimensional (Star Schema)**: fato `fct_flight_delays` (mês + companhia + aeroporto) ligado a três dimensões (`dim_airport`, `dim_carrier`, `dim_month`), alimentando 5 marts analíticos.
+- **Transformações em SQL via dbt**, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL` para o mart de causas de atraso.
+- **Testes de qualidade de dados automatizados** com `dbt-expectations` — integridade referencial, unicidade, valores aceitos.
+- **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e ambientes `dev`/`prod` alternáveis por variável, sem alterar código.
+- **CI/CD no GitHub Actions**: a cada push/PR, valida sintaxe, sobe um PostgreSQL efêmero, roda o build completo com testes e publica a documentação — só libera merge se tudo passar.
+- **Ambiente 100% reprodutível** via Docker e UV.
 
-**Marts analíticos:** performance por aeroporto, performance por companhia, KPIs mensais, causas de atraso (formato long para BI) e participação percentual de cada causa por mês.
+**Resultado rodando de ponta a ponta:**
+
+**Lineage graph (dbt docs)** — dependências entre staging, dimensões, fato e marts:
+![Lineage graph do dbt](docs/imagens/dbt-lineage.png)
+
+**Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos:
+![DAG do Airflow](docs/imagens/airflow-dag.png)
+
+**CI/CD no GitHub Actions** — pipeline completo (seed + run + test) a cada push:
+![CI passando](docs/imagens/github-actions-ci.png)
+
+**Dado pronto para consumo** — resultado de um mart analítico:
+![Exemplo de mart](docs/imagens/mart-sample.png)
+
+---
+
+## 📈 Resultados, aprendizados e próximos passos
+
+**Resultados:** 5 tabelas analíticas prontas para BI — performance por aeroporto, performance por companhia, KPIs mensais e duas visões de causas de atraso (long e percentual por mês) — todas testadas e reconstruídas automaticamente a cada execução do pipeline.
+
+**Aprendizados:**
+- Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage
+- Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução
+- Construir um CI que não só valida sintaxe, mas sobe infraestrutura real e roda o pipeline completo antes do merge
+
+**Próximos passos:**
+- Conectar um dashboard de BI (Power BI/Looker) direto nos marts
+- Expandir a cobertura de testes com `dbt-expectations` para os marts
+- Adicionar alertas de falha do DAG (Slack/e-mail)
 
 ---
 
@@ -87,8 +99,6 @@ flowchart LR
 ├── .github/workflows/   # Pipeline de CI (dbt_ci.yml)
 └── docs/SETUP.md        # Guia detalhado de instalação e execução
 ```
-
----
 
 ## 🚀 Rodando localmente (resumo)
 
