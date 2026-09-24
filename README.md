@@ -1,12 +1,12 @@
-# ✈️ DW Bootcamp — Data Warehouse de Atrasos de Voos nos EUA
+# ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados end-to-end — ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada — construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Pipeline de dados end-to-end : ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
 
 ---
 
 ## 🎯 Problema
 
-Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente — reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
+Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente  reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
 
 ---
 
@@ -60,33 +60,33 @@ flowchart LR
 
 **Resultado rodando de ponta a ponta:**
 
-**Lineage graph (dbt docs)** — dependências entre staging, dimensões, fato e marts:
+**Lineage graph (dbt docs)** - dependências entre staging, dimensões, fato e marts:
 ![Lineage graph do dbt](docs/imagens/dbt-lineage.png)
 
-**Orquestração no Airflow** — DAG gerado automaticamente pelo Cosmos:
+**Orquestração no Airflow** - DAG gerado automaticamente pelo Cosmos:
 ![DAG do Airflow](docs/imagens/airflow-dag.png)
 
-**CI/CD no GitHub Actions** — pipeline completo (seed + run + test) a cada push:
+**CI/CD no GitHub Actions** - pipeline completo (seed + run + test) a cada push:
 ![CI passando](docs/imagens/github-actions-ci.png)
 
-**Dado pronto para consumo** — resultado de um mart analítico:
+**Dado pronto para consumo** - resultado de um mart analítico:
 ![Exemplo de mart](docs/imagens/mart-sample.png)
 
 ---
 
 ## 📈 Resultados, aprendizados e próximos passos
 
-**Resultados:** 5 tabelas analíticas prontas para BI — performance por aeroporto, performance por companhia, KPIs mensais e duas visões de causas de atraso (long e percentual por mês) — todas testadas e reconstruídas automaticamente a cada execução do pipeline.
+**Resultados:** 5 tabelas analíticas prontas para BI - performance por aeroporto, performance por companhia, KPIs mensais e duas visões de causas de atraso (long e percentual por mês), todas testadas e reconstruídas automaticamente a cada execução do pipeline.
 
 **Aprendizados:**
-- Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage
-- Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução
-- Construir um CI que não só valida sintaxe, mas sobe infraestrutura real e roda o pipeline completo antes do merge
+- Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage.
+- Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução.
+- Construir um CI que não só valida sintaxe, mas sobe infraestrutura real e roda o pipeline completo antes do merge.
 
 **Próximos passos:**
-- Conectar um dashboard de BI (Power BI/Looker) direto nos marts
-- Expandir a cobertura de testes com `dbt-expectations` para os marts
-- Adicionar alertas de falha do DAG (Slack/e-mail)
+- Conectar um dashboard de BI (Power BI/Looker) direto nos marts.
+- Expandir a cobertura de testes com `dbt-expectations` para os marts.
+- Adicionar alertas de falha do DAG (Slack/e-mail).
 
 ---
 
@@ -125,4 +125,4 @@ cd ../../3_airflow && astro dev start
 
 ---
 
-**Autor:** Ian Fava — [GitHub](https://github.com/iannfava)
+**Autor:** Ian Fava - [GitHub](https://github.com/iannfava)
