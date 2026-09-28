@@ -15,20 +15,25 @@ Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA 
 ```mermaid
 flowchart LR
     A[Airline_Delay_Cause.csv] -->|dbt seed| B[(PostgreSQL)]
-    B --> C[stg_airline_delay_cause\nlimpeza e tipagem]
-    C --> D1[int_dim_airport]
-    C --> D2[int_dim_carrier]
-    C --> D3[int_dim_month]
-    C --> E[int_fct_flight_delays]
-    D1 --> F1[mart_airport_performance]
-    D2 --> F2[mart_carrier_performance]
-    D3 --> F3[mart_monthly_kpis]
-    E --> F1
-    E --> F2
-    E --> F3
-    E --> F4[mart_delay_causes_long]
-    E --> F5[mart_delay_causes_share_month]
-    F1 & F2 & F3 & F4 & F5 --> G[Airflow + Cosmos\nagendamento diário]
+
+    subgraph DBT["dbt — Medallion Architecture (executa dentro do PostgreSQL)"]
+        C[stg_airline_delay_cause\nlimpeza e tipagem]
+        C --> D1[int_dim_airport]
+        C --> D2[int_dim_carrier]
+        C --> D3[int_dim_month]
+        C --> E[int_fct_flight_delays]
+        D1 --> F1[mart_airport_performance]
+        D2 --> F2[mart_carrier_performance]
+        D3 --> F3[mart_monthly_kpis]
+        E --> F1
+        E --> F2
+        E --> F3
+        E --> F4[mart_delay_causes_long]
+        E --> F5[mart_delay_causes_share_month]
+    end
+
+    B --> C
+    G[Airflow + Cosmos\nagendamento diário] -.->|orquestra| DBT
     H[GitHub Actions\na cada push] --> I[Postgres efêmero do CI\ndbt seed + build + test]
 ```
 
