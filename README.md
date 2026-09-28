@@ -111,7 +111,7 @@ flowchart LR
 git clone https://github.com/iannfava/data-warehouse-airflow-dbt.git && cd data-warehouse-airflow-dbt
 
 # Sobe o Postgres
-cd 1_local_setup && uv venv .venv && uv sync && docker compose up -d
+cd 1_local_setup && cp .env.example .env && uv venv .venv && uv sync && docker compose up -d
 
 # Roda o pipeline dbt (após criar profiles.yml — veja o guia completo)
 cd ../2_data_warehouse/dw_bootcamp && dbt deps && dbt build
