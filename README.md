@@ -1,12 +1,12 @@
 # ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados end-to-end : ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Pipeline de dados end-to-end: ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
 
 ---
 
 ## 🎯 Problema
 
-Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente  reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
+Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente, reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
 
 ---
 
@@ -15,19 +15,21 @@ Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA 
 ```mermaid
 flowchart LR
     A[Airline_Delay_Cause.csv] -->|dbt seed| B[(PostgreSQL)]
-    B --> C[Staging\nlimpeza e tipagem]
-    C --> D1[dim_airport]
-    C --> D2[dim_carrier]
-    C --> D3[dim_month]
-    C --> E[fct_flight_delays]
-    D1 & D2 & D3 --> E
-    E --> F1[mart_airport_performance]
-    E --> F2[mart_carrier_performance]
-    E --> F3[mart_monthly_kpis]
+    B --> C[stg_airline_delay_cause\nlimpeza e tipagem]
+    C --> D1[int_dim_airport]
+    C --> D2[int_dim_carrier]
+    C --> D3[int_dim_month]
+    C --> E[int_fct_flight_delays]
+    D1 --> F1[mart_airport_performance]
+    D2 --> F2[mart_carrier_performance]
+    D3 --> F3[mart_monthly_kpis]
+    E --> F1
+    E --> F2
+    E --> F3
     E --> F4[mart_delay_causes_long]
     E --> F5[mart_delay_causes_share_month]
     F1 & F2 & F3 & F4 & F5 --> G[Airflow + Cosmos\nagendamento diário]
-    H[GitHub Actions] -.valida cada push.-> B
+    H[GitHub Actions\na cada push] --> I[Postgres efêmero do CI\ndbt seed + build + test]
 ```
 
 **Medallion Architecture em 3 camadas:** Staging (limpeza e tipagem) → Intermediate (dimensões + fato, Star Schema) → Mart (tabelas analíticas prontas para BI). Orquestrado diariamente pelo Airflow via Cosmos, com CI/CD validando o pipeline inteiro a cada push.
@@ -41,7 +43,7 @@ flowchart LR
 | Banco de dados | PostgreSQL 17 (Docker) |
 | Transformação | dbt 1.9+ (Medallion Architecture) |
 | Orquestração | Apache Airflow 3.x (Astro Runtime) + astronomer-cosmos |
-| Ambiente Python | Python 3.13 + UV |
+| Ambiente Python | Python 3.13+ e UV |
 | CI/CD | GitHub Actions (compile, build, test, docs) |
 | Deploy prod | PostgreSQL remoto (Railway) |
 
@@ -51,7 +53,7 @@ flowchart LR
 
 **O que foi construído:**
 
-- **Modelagem dimensional (Star Schema)**: fato `fct_flight_delays` (mês + companhia + aeroporto) ligado a três dimensões (`dim_airport`, `dim_carrier`, `dim_month`), alimentando 5 marts analíticos.
+- **Modelagem dimensional (Star Schema)**: fato `int_fct_flight_delays` (mês + companhia + aeroporto) e três dimensões (`int_dim_airport`, `int_dim_carrier`, `int_dim_month`), alimentando 5 marts analíticos.
 - **Transformações em SQL via dbt**, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL` para o mart de causas de atraso.
 - **Testes de qualidade de dados automatizados** com `dbt-expectations` — integridade referencial, unicidade, valores aceitos.
 - **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e ambientes `dev`/`prod` alternáveis por variável, sem alterar código.
