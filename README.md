@@ -1,12 +1,12 @@
 # ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados end-to-end: ingestão, modelagem dimensional, testes de qualidade e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Pipeline de dados end-to-end: ingestão, modelagem dimensional e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
 
 ---
 
 ## 🎯 Problema
 
-Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico confiável, testado e atualizado automaticamente, reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado confiável e pronto para BI sai.
+Transformar **~318 mil registros brutos** de atrasos de voos comerciais nos EUA em um Data Warehouse analítico estruturado e atualizado automaticamente, reproduzindo o fluxo de trabalho de um time de engenharia de dados em produção: dado bruto entra, dado estruturado e pronto para BI sai.
 
 ---
 
@@ -34,7 +34,7 @@ flowchart LR
 
     B --> C
     G[Airflow + Cosmos\nagendamento diário] -.->|orquestra| DBT
-    H[GitHub Actions\na cada push] --> I[Postgres efêmero do CI\ndbt seed + build + test]
+    H[GitHub Actions\na cada push] --> I[Postgres efêmero do CI\ndbt seed + build]
 ```
 
 **Medallion Architecture em 3 camadas:** Staging (limpeza e tipagem) → Intermediate (dimensões + fato, Star Schema) → Mart (tabelas analíticas prontas para BI). Orquestrado diariamente pelo Airflow via Cosmos, com CI/CD validando o pipeline inteiro a cada push.
@@ -49,8 +49,7 @@ flowchart LR
 | Transformação | dbt 1.9+ (Medallion Architecture) |
 | Orquestração | Apache Airflow 3.x (Astro Runtime) + astronomer-cosmos |
 | Ambiente Python | Python 3.13+ e UV |
-| CI/CD | GitHub Actions (compile, build, test, docs) |
-| Deploy prod | PostgreSQL remoto (Railway) |
+| CI/CD | GitHub Actions (parse, seed, build, docs) |
 
 ---
 
@@ -60,9 +59,8 @@ flowchart LR
 
 - **Modelagem dimensional (Star Schema)**: fato `int_fct_flight_delays` (mês + companhia + aeroporto) e três dimensões (`int_dim_airport`, `int_dim_carrier`, `int_dim_month`), alimentando 5 marts analíticos.
 - **Transformações em SQL via dbt**, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL` para o mart de causas de atraso.
-- **Testes de qualidade de dados automatizados** com `dbt-expectations` — integridade referencial, unicidade, valores aceitos.
-- **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e ambientes `dev`/`prod` alternáveis por variável, sem alterar código.
-- **CI/CD no GitHub Actions**: a cada push/PR, valida sintaxe, sobe um PostgreSQL efêmero, roda o build completo com testes e publica a documentação — só libera merge se tudo passar.
+- **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e seleção de ambiente (`dev`/`prod`) por variável do Airflow, sem alterar código; a execução foi validada em `dev`.
+- **CI/CD no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo e publica a documentação do dbt como artefato.
 - **Ambiente 100% reprodutível** via Docker e UV.
 
 **Resultado rodando de ponta a ponta:**
@@ -73,7 +71,7 @@ flowchart LR
 **Orquestração no Airflow** - DAG gerado automaticamente pelo Cosmos:
 ![DAG do Airflow](docs/imagens/airflow-dag.png)
 
-**CI/CD no GitHub Actions** - pipeline completo (seed + run + test) a cada push:
+**CI/CD no GitHub Actions** - pipeline completo rodando a cada push:
 ![CI passando](docs/imagens/github-actions-ci.png)
 
 **Dado pronto para consumo** - resultado de um mart analítico:
@@ -83,16 +81,16 @@ flowchart LR
 
 ## 📈 Resultados, aprendizados e próximos passos
 
-**Resultados:** 5 tabelas analíticas prontas para BI - performance por aeroporto, performance por companhia, KPIs mensais e duas visões de causas de atraso (long e percentual por mês), todas testadas e reconstruídas automaticamente a cada execução do pipeline.
+**Resultados:** 5 tabelas analíticas prontas para BI - performance por aeroporto, performance por companhia, KPIs mensais e duas visões de causas de atraso (long e percentual por mês), todas reconstruídas automaticamente a cada execução do pipeline.
 
 **Aprendizados:**
 - Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage.
 - Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução.
-- Construir um CI que não só valida sintaxe, mas sobe infraestrutura real e roda o pipeline completo antes do merge.
+- Construir um CI que não só valida sintaxe, mas sobe um banco efêmero e roda o pipeline completo a cada push.
 
 **Próximos passos:**
 - Conectar um dashboard de BI (Power BI/Looker) direto nos marts.
-- Expandir a cobertura de testes com `dbt-expectations` para os marts.
+- Adicionar testes de qualidade de dados (`unique`, `not_null`, `relationships`, `dbt-expectations`) e proteger a `main` com branch protection.
 - Adicionar alertas de falha do DAG (Slack/e-mail).
 
 ---
@@ -128,7 +126,7 @@ cd ../../3_airflow && astro dev start
 
 ## 📚 Referências
 
-- [dbt](https://docs.getdbt.com) · [astronomer-cosmos](https://astronomer.github.io/astronomer-cosmos/) · [Astro CLI](https://docs.astronomer.io/astro/cli/overview) · [dbt-expectations](https://hub.getdbt.com/calogica/dbt_expectations/latest/)
+- [dbt](https://docs.getdbt.com) · [astronomer-cosmos](https://astronomer.github.io/astronomer-cosmos/) · [Astro CLI](https://docs.astronomer.io/astro/cli/overview)
 
 ---
 
