@@ -25,16 +25,16 @@
 
 ## 1. Visão Geral do Projeto
 
-Este projeto implementa um **Data Warehouse (DW) completo** do zero, usando uma stack moderna de engenharia de dados. O domínio de dados escolhido é a análise de **atrasos em voos comerciais nos EUA**, com cerca de 318 mil registros reais.
+Este projeto implementa um **Data Warehouse (DW)** de ponta a ponta, construído seguindo um curso guiado de engenharia de dados, com uma stack moderna. O domínio de dados escolhido é a análise de **atrasos em voos comerciais nos EUA**, com cerca de 318 mil registros reais.
 
 ### O que você vai aprender e praticar:
 
 - Subir um banco de dados PostgreSQL com Docker
 - Organizar transformações de dados em camadas com dbt (Medallion Architecture)
 - Criar dimensões e fatos (Star Schema)
-- Usar pacotes dbt (`dbt-utils`, `dbt-expectations`, `dbt-date`)
+- Instalar pacotes dbt (`dbt-utils` e `dbt-expectations`; o `dbt-date` vem como dependência)
 - Orquestrar o pipeline com Apache Airflow usando a biblioteca `astronomer-cosmos`
-- Gerenciar ambientes `dev` e `prod` de forma profissional
+- Configurar ambientes `dev` e `prod` por variável do Airflow (neste repositório, apenas o `dev` foi executado)
 - Automatizar validações com CI/CD via GitHub Actions
 
 ---
@@ -58,8 +58,8 @@ Este projeto implementa um **Data Warehouse (DW) completo** do zero, usando uma 
 | Pacote | Versão | Para que serve |
 |---|---|---|
 | `dbt-utils` | 1.3.0 | Macros utilitárias (surrogate_key, unpivot, etc.) |
-| `dbt-expectations` | 0.10.8 | Testes avançados de qualidade de dados |
-| `dbt-date` | 0.17.0 | Utilitários de data/hora (fuso: America/Sao_Paulo) |
+| `dbt-expectations` | 0.10.8 | Testes avançados de qualidade de dados (instalado; ainda sem testes escritos neste projeto) |
+| `dbt-date` | 0.17.0 | Utilitários de data/hora (fuso: America/Sao_Paulo); dependência do dbt-expectations |
 
 ### Arquitetura Medallion (camadas do dbt)
 
@@ -75,14 +75,14 @@ CSV (Seed)
 ## 3. Estrutura de Pastas
 
 ```
-projeto_final_engenharia/
+data-warehouse-airflow-dbt/
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                    # Pipeline de CI/CD com GitHub Actions
+│       └── dbt_ci.yml                # Pipeline de CI com GitHub Actions
 │
 ├── 1_local_setup/                    # Configuração do ambiente local
-│   ├── .env                          # Variáveis de ambiente (usuário/senha do banco)
+│   ├── .env.example                  # Modelo das variáveis (copie para .env, que fica fora do Git)
 │   ├── docker-compose.yml            # Define o container PostgreSQL
 │   ├── pyproject.toml                # Dependências Python do projeto
 │   └── .python-version               # Versão do Python usada
@@ -108,6 +108,10 @@ projeto_final_engenharia/
 │               ├── mart_monthly_kpis.sql
 │               ├── mart_delay_causes_long.sql
 │               └── mart_delay_causes_share_month.sql
+│
+├── docs/                             # Este guia e as imagens do README
+├── LICENSE                           # Licença MIT
+├── README.md                         # Visão geral do projeto
 │
 └── 3_airflow/                        # Orquestração com Airflow
     ├── Dockerfile                    # Imagem customizada com dbt instalado
@@ -228,17 +232,24 @@ git --version
 
 > **Objetivo:** subir o banco PostgreSQL localmente com Docker e configurar o Python.
 
-### Passo 1 — Clone ou abra o projeto
+### Passo 1 — Clone o projeto
 
-Se você recebeu o projeto como arquivo compactado, extraia e abra no terminal (Git Bash ou PowerShell).
+Abra o terminal (Git Bash ou PowerShell) e clone o repositório:
 
 ```bash
-cd projeto_final_engenharia
+git clone https://github.com/iannfava/data-warehouse-airflow-dbt.git
+cd data-warehouse-airflow-dbt
 ```
 
 ### Passo 2 — Entenda e verifique o arquivo `.env`
 
-O arquivo `.env` em `1_local_setup/` guarda as credenciais do banco. O Docker Compose lê essas variáveis automaticamente ao subir o container.
+O repositório traz um modelo, `1_local_setup/.env.example`. Copie-o para `.env`, que é o arquivo que o Docker Compose lê ao subir o container (rode a partir da raiz do projeto):
+
+```bash
+cp 1_local_setup/.env.example 1_local_setup/.env    # o PowerShell também aceita 'cp'
+```
+
+Conteúdo (credenciais padrão de um banco local de estudo):
 
 ```env
 # 1_local_setup/.env
@@ -472,6 +483,7 @@ packages:
     version: "0.10.8"
     # Testes avançados de qualidade: ranges, nulls, valores aceitos, regras condicionais.
     # Mais expressivo que os testes nativos do dbt.
+    # Neste projeto o pacote está instalado, mas ainda não há testes escritos.
 ```
 
 Instale os pacotes com:
@@ -499,7 +511,7 @@ dbt build
 O `dbt build` executa em sequência:
 1. **Seeds** — dados brutos
 2. **Models** — todas as transformações (staging → intermediate → mart)
-3. **Tests** — testes de qualidade de dados
+3. **Tests** — testes de qualidade de dados (este projeto ainda não tem testes escritos, então esta etapa não executa nada)
 4. **Snapshots** — capturas de estado (se existirem)
 
 Nas próximas execuções, para pular o seed (que já foi carregado):
@@ -766,6 +778,8 @@ my_cosmos_dag = DbtDag(
     default_args={"retries": 2},          # 2 tentativas em caso de falha
 )
 ```
+
+> **Nota:** o perfil `prod` está definido no código (aponta para uma conexão `railway_postgres_db`), mas neste repositório só o ambiente `dev` foi configurado e executado. Não há banco de produção provisionado.
 
 ### Passo 24 — Ative e execute o DAG
 
@@ -1185,6 +1199,30 @@ models:
 
 ## 11. Erros Comuns e Soluções
 
+### `uv trampoline failed to canonicalize script path` (Windows)
+
+**Causa:** o `.venv` guarda caminhos absolutos. Se a pasta do projeto foi renomeada ou movida, os atalhos quebram.
+
+**Solução:** apague e recrie o ambiente virtual:
+
+```powershell
+cd 1_local_setup
+Remove-Item -Recurse -Force .venv
+uv venv .venv
+.venv\Scripts\Activate.ps1
+uv sync
+```
+
+### `uv sync` falha com "failed to hardlink file" (Windows)
+
+**Causa provável:** a pasta está em um local sincronizado com um serviço de nuvem (como o OneDrive), que não aceita hardlinks.
+
+**Solução:** peça ao `uv` para copiar os arquivos em vez de linkar:
+
+```powershell
+uv sync --link-mode=copy
+```
+
 ### "Connection refused" no `dbt debug`
 
 **Causa:** Docker não está rodando ou o container não subiu.
@@ -1371,7 +1409,7 @@ Push / Pull Request
 └─────────────────────────────────────────────┘
 ```
 
-### Entenda o arquivo `.github/workflows/ci.yml`
+### Entenda o arquivo `.github/workflows/dbt_ci.yml`
 
 ```yaml
 name: CI — dbt Pipeline
@@ -1513,6 +1551,8 @@ jobs:
 
 ### Passo 25 — Publique o projeto no GitHub
 
+> **Nota:** este passo é para quem replica o projeto em um repositório próprio. O repositório original já está publicado em https://github.com/iannfava/data-warehouse-airflow-dbt e pode ser clonado direto (Passo 1). Nos comandos abaixo, `SEU_USUARIO/SEU_REPOSITORIO` é o espaço para a sua URL.
+
 Para o CI funcionar, o projeto precisa estar em um repositório no GitHub.
 
 #### 25.1 — Crie um repositório no GitHub
@@ -1527,7 +1567,7 @@ Para o CI funcionar, o projeto precisa estar em um repositório no GitHub.
 #### 25.2 — Conecte seu projeto local ao repositório remoto
 
 ```bash
-# Dentro da pasta projeto_final_engenharia:
+# Dentro da pasta do projeto:
 
 # Se ainda não inicializou o git:
 git init
@@ -1593,7 +1633,7 @@ No GitHub, abra um **Pull Request** da sua branch para `main`. O CI rodará auto
 ```bash
 # Verifique se o arquivo foi commitado:
 git status
-git add .github/workflows/ci.yml
+git add .github/workflows/dbt_ci.yml
 git commit -m "ci: adiciona workflow do GitHub Actions"
 git push
 ```
@@ -1624,4 +1664,4 @@ git push
 
 ---
 
-*Documentação gerada em 2026-03-17*
+*Guia baseado no material do curso e ajustado para este repositório.*
