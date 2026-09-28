@@ -1,6 +1,6 @@
 # ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados end-to-end: ingestão, modelagem dimensional e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Pipeline de dados end-to-end: ingestão, modelagem dimensional e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI**.
 
 ---
 
@@ -37,7 +37,7 @@ flowchart LR
     H[GitHub Actions\na cada push] --> I[Postgres efêmero do CI\ndbt seed + build]
 ```
 
-**Medallion Architecture em 3 camadas:** Staging (limpeza e tipagem) → Intermediate (dimensões + fato, Star Schema) → Mart (tabelas analíticas prontas para BI). Orquestrado diariamente pelo Airflow via Cosmos, com CI/CD validando o pipeline inteiro a cada push.
+**Medallion Architecture em 3 camadas:** Staging (limpeza e tipagem) → Intermediate (dimensões + fato, Star Schema) → Mart (tabelas analíticas prontas para BI). Orquestrado diariamente pelo Airflow via Cosmos, com CI validando o pipeline inteiro a cada push.
 
 ---
 
@@ -49,7 +49,7 @@ flowchart LR
 | Transformação | dbt 1.9+ (Medallion Architecture) |
 | Orquestração | Apache Airflow 3.x (Astro Runtime) + astronomer-cosmos |
 | Ambiente Python | Python 3.13+ e UV |
-| CI/CD | GitHub Actions (parse, seed, build, docs) |
+| CI | GitHub Actions (parse, seed, build, docs) |
 
 ---
 
@@ -60,7 +60,7 @@ flowchart LR
 - **Modelagem dimensional (Star Schema)**: fato `int_fct_flight_delays` (mês + companhia + aeroporto) e três dimensões (`int_dim_airport`, `int_dim_carrier`, `int_dim_month`), alimentando 5 marts analíticos.
 - **Transformações em SQL via dbt**, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL` para o mart de causas de atraso.
 - **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e seleção de ambiente (`dev`/`prod`) por variável do Airflow, sem alterar código; a execução foi validada em `dev`.
-- **CI/CD no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo e publica a documentação do dbt como artefato.
+- **CI no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo e publica a documentação do dbt como artefato.
 - **Ambiente 100% reprodutível** via Docker e UV.
 
 **Dicionário de dados (colunas principais da fato):**
@@ -80,7 +80,7 @@ flowchart LR
 **Orquestração no Airflow** - DAG gerado automaticamente pelo Cosmos:
 ![DAG do Airflow](docs/imagens/airflow-dag.png)
 
-**CI/CD no GitHub Actions** - pipeline completo rodando a cada push:
+**CI no GitHub Actions** - pipeline completo rodando a cada push:
 ![CI passando](docs/imagens/github-actions-ci.png)
 
 **Dado pronto para consumo** - resultado de um mart analítico:
