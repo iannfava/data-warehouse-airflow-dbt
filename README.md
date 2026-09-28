@@ -1,6 +1,6 @@
 # ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Data Warehouse de atrasos de voos nos EUA: ingestão, modelagem dimensional e orquestração diária com dbt, Airflow, PostgreSQL e Docker, com CI no GitHub Actions.
+Pipeline de dados end-to-end: ingestão, modelagem dimensional e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
 
 ---
 
@@ -63,6 +63,15 @@ flowchart LR
 - **CI/CD no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo e publica a documentação do dbt como artefato.
 - **Ambiente 100% reprodutível** via Docker e UV.
 
+**Dicionário de dados (colunas principais da fato):**
+
+| Coluna | Significado |
+|---|---|
+| `arr_flights` | Voos que chegaram no aeroporto |
+| `arr_del15` | Voos atrasados 15+ minutos (validado nos dados: quando > 0, o atraso mínimo real é sempre 15) |
+| `arr_cancelled` | Voos cancelados |
+| `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay` | As 5 causas de atraso (companhia, clima, sistema aéreo nacional, segurança, aeronave anterior atrasada) — somadas, batem com `arr_delay` |
+
 **Resultado rodando de ponta a ponta:**
 
 **Lineage graph (dbt docs)** - do dado bruto (seed) até os marts, passando por staging e intermediate (rótulos das camadas adicionados sobre a captura do dbt docs):
@@ -85,7 +94,7 @@ flowchart LR
 
 **Aprendizados:**
 - Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage.
-- Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução.
+- Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução. Na prática, uma execução falhou no primeiro passo (o seed, por banco indisponível) e as `retries: 2` do DAG tentaram de novo antes de marcar as tasks seguintes como `upstream_failed`, sem rodar — confirmando que a dependência entre tasks funciona como esperado.
 - Construir um CI que não só valida sintaxe, mas sobe um banco efêmero e roda o pipeline completo a cada push.
 
 **Próximos passos:**
