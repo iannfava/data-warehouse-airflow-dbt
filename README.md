@@ -65,7 +65,7 @@ flowchart LR
 
 **Resultado rodando de ponta a ponta:**
 
-**Lineage graph (dbt docs)** - dependências entre staging, dimensões, fato e marts:
+**Lineage graph (dbt docs)** - do dado bruto (seed) até os marts, passando por staging e intermediate (rótulos das camadas adicionados sobre a captura do dbt docs):
 ![Lineage graph do dbt](docs/imagens/dbt-lineage.png)
 
 **Orquestração no Airflow** - DAG gerado automaticamente pelo Cosmos:
@@ -102,7 +102,8 @@ flowchart LR
 ├── 2_data_warehouse/    # Projeto dbt: seeds, models (staging/intermediate/mart)
 ├── 3_airflow/           # Projeto Astro/Airflow + DAG com Cosmos
 ├── .github/workflows/   # Pipeline de CI (dbt_ci.yml)
-└── docs/SETUP.md        # Guia detalhado de instalação e execução
+├── docs/                # Guia de instalação (SETUP.md) e imagens do README
+└── LICENSE              # Licença MIT
 ```
 
 ## 🚀 Rodando localmente (resumo)
