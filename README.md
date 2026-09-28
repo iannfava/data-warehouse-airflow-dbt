@@ -1,6 +1,6 @@
 # ✈️ Data Warehouse de Atrasos de Voos nos EUA
 
-Pipeline de dados end-to-end: ingestão, modelagem dimensional e orquestração automatizada, construído com **dbt**, **Apache Airflow** e **PostgreSQL**, containerizado com **Docker** e validado por **CI/CD**.
+Data Warehouse de atrasos de voos nos EUA: ingestão, modelagem dimensional e orquestração diária com dbt, Airflow, PostgreSQL e Docker, com CI no GitHub Actions.
 
 ---
 
