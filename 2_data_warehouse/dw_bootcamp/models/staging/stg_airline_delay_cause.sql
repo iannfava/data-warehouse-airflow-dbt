@@ -1,5 +1,4 @@
--- STAGING: lê o dado bruto do seed e entrega ele limpo e tipado.
--- Não filtra, não agrega, não junta com outra tabela — só organiza.
+-- STAGING: lê o dado bruto do seed e entrega ele limpo.
 
 with src as (
     -- Pega as colunas do seed (Airline_Delay_Cause) exatamente como estão,
