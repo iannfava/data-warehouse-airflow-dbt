@@ -1,6 +1,3 @@
--- DIMENSÃO: uma linha por companhia aérea, sem repetição.
--- Mesmo padrão do int_dim_airport.sql, só trocando "airport" por "carrier".
-
 with base as (
     select
         carrier,
@@ -9,7 +6,7 @@ with base as (
 )
 
 select
-    carrier                              as carrier_id,   -- código da companhia (ex: AA, DL)
-    max(carrier_name)                    as carrier_name  -- nome completo (ex: American Airlines)
+    carrier                              as carrier_id,
+    max(carrier_name)                    as carrier_name
 from base
 group by carrier
