@@ -49,7 +49,7 @@ flowchart LR
 | Transformação | dbt 1.9+ (Medallion Architecture) |
 | Orquestração | Apache Airflow 3.x (Astro Runtime) + astronomer-cosmos |
 | Ambiente Python | Python 3.13+ e UV |
-| CI | GitHub Actions (parse, seed, build, docs) |
+| CI | GitHub Actions (parse, seed, build com teste, docs) |
 
 ---
 
@@ -60,7 +60,8 @@ flowchart LR
 - **Modelagem dimensional (Star Schema)**: fato `int_fct_flight_delays` (mês + companhia + aeroporto) e três dimensões (`int_dim_airport`, `int_dim_carrier`, `int_dim_month`), alimentando 5 marts analíticos.
 - **Transformações em SQL via dbt**, incluindo lógica de negócio, agregações e um unpivot manual via `UNION ALL` para o mart de causas de atraso.
 - **Orquestração com Apache Airflow**: cada model dbt vira automaticamente uma task via `astronomer-cosmos`, com agendamento diário e seleção de ambiente (`dev`/`prod`) por variável do Airflow, sem alterar código; a execução foi validada em `dev`.
-- **CI no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo e publica a documentação do dbt como artefato.
+- **Teste de qualidade de dados no dbt**: um teste singular (`tests/assert_soma_causas_proxima_do_atraso_total_por_mes.sql`) confere, mês a mês, se a soma das 5 causas de atraso fica dentro de 0,1% do atraso total (`arr_delay`). Foi validado nos dois sentidos: passa com os dados atuais e falha, como esperado, com uma tolerância mais estreita.
+- **CI no GitHub Actions**: a cada push/PR, valida a sintaxe, sobe um PostgreSQL efêmero, roda seed e build completo (que inclui esse teste) e publica a documentação do dbt como artefato.
 - **Ambiente 100% reprodutível** via Docker e UV.
 
 **Dicionário de dados (colunas principais da fato):**
@@ -70,7 +71,7 @@ flowchart LR
 | `arr_flights` | Voos que chegaram no aeroporto |
 | `arr_del15` | Voos atrasados 15+ minutos (validado nos dados: quando > 0, o atraso mínimo real é sempre 15) |
 | `arr_cancelled` | Voos cancelados |
-| `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay` | As 5 causas de atraso (companhia, clima, sistema aéreo nacional, segurança, aeronave anterior atrasada) — somadas, batem com `arr_delay` |
+| `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay` | As 5 causas de atraso (companhia, clima, sistema aéreo nacional, segurança, aeronave anterior atrasada) — somadas, ficam praticamente iguais a `arr_delay` (diferença líquida de ~0,0003%, vinda de inconsistências do próprio dado de origem; veja Aprendizados) |
 
 **Resultado rodando de ponta a ponta:**
 
@@ -96,10 +97,11 @@ flowchart LR
 - Estruturar um projeto dbt em camadas que facilitam teste, manutenção e leitura do lineage.
 - Integrar dbt e Airflow via Cosmos, com múltiplos ambientes de execução. Na prática, uma execução falhou no primeiro passo (o seed, por banco indisponível) e as `retries: 2` do DAG tentaram de novo antes de marcar as tasks seguintes como `upstream_failed`, sem rodar — confirmando que a dependência entre tasks funciona como esperado.
 - Construir um CI que não só valida sintaxe, mas sobe um banco efêmero e roda o pipeline completo a cada push.
+- Investigar qualidade de dados na prática: ao conferir se a soma das 5 causas bate com o atraso total, encontrei 494 linhas com `arr_delay` vazio (mas com minutos nas causas) e 3 linhas com total maior que a soma das causas. Conferi no seed e as inconsistências já vêm do dado de origem, e não do pipeline. A diferença líquida é de 4.195 minutos em ~1,34 bilhão (~0,0003%), e por isso o teste usa uma tolerância relativa por mês, em vez de exigir igualdade exata.
 
 **Próximos passos:**
 - Conectar um dashboard de BI (Power BI/Looker) direto nos marts.
-- Adicionar testes de qualidade de dados (`unique`, `not_null`, `relationships`, `dbt-expectations`) e proteger a `main` com branch protection.
+- Ampliar os testes de qualidade de dados (`unique`, `not_null`, `relationships`, `dbt-expectations`) e proteger a `main` com branch protection.
 - Adicionar alertas de falha do DAG (Slack/e-mail).
 
 ---
